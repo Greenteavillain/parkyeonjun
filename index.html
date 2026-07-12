@@ -793,20 +793,23 @@ document.addEventListener("DOMContentLoaded", init);
       setEyeClosed(lens, d < LENS_RADIUS - 1.5);
     }
   }
-  function setLidsOpen() { for (const lens of LENS) setEyeClosed(lens, false); }
-  // 클릭(내비게이션) 시 안경이 눈 한 번 깜빡 — 기존 눈꺼풀(lid) path 재활용. reduce-motion이면 생략.
-  function blink() {
-    if (blinking) return;
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
-    blinking = true;
+  function setLidsOpen() { if (blinking) return; for (const lens of LENS) setEyeClosed(lens, false); }   // 누른 채(hold) 유휴/이탈 로직이 눈 못 열게
+  // 누르고 있는 동안 눈 감고, 떼면 바로 뜸 (기존 눈꺼풀 path 재활용). reduce-motion이면 생략.
+  const REDUCE_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches);
+  function holdClose() {
+    if (REDUCE_MOTION) return;
+    blinking = true;   // 누른 동안 커서추적(updateLids)이 눈 다시 못 열게 가드
     setEyeClosed(LENS[0], true); setEyeClosed(LENS[1], true);
-    setTimeout(function () {
-      blinking = false;
-      setEyeClosed(LENS[0], false); setEyeClosed(LENS[1], false);
-    }, 150);
   }
-  window.__blink = blink;
-  document.addEventListener('click', blink);   // 페이지 아무 데나 클릭하면 안경이 깜빡
+  function holdOpen() {
+    if (!blinking) return;
+    blinking = false;
+    setEyeClosed(LENS[0], false); setEyeClosed(LENS[1], false);
+  }
+  document.addEventListener('pointerdown', holdClose);   // 누르면 감음
+  window.addEventListener('pointerup', holdOpen);        // 떼면 바로 뜸
+  window.addEventListener('pointercancel', holdOpen);
+  window.addEventListener('blur', holdOpen);             // 창 밖에서 떼거나 포커스 잃어도 안전하게 뜸
   function cancelLeaveBehavior() {
     if (inertiaRaf)  { cancelAnimationFrame(inertiaRaf); inertiaRaf = null; }
     if (returnTimer) { clearTimeout(returnTimer); returnTimer = null; }
