@@ -1,0 +1,1053 @@
+<!--
+  박연준 · 홖 — 포트폴리오 (v3 · studio fnt 참고, 미니멀)
+  - 단일 HTML. 어디든 올리면 동작.
+  - 작업 수정/순서: <script>의 PROJECTS 배열.
+  - 이미지: project.image 에 경로 넣으면 색 타일이 이미지로 바뀜.
+  - 영상: project.video 에 mp4 경로(예: "media/somido.mp4") 넣으면 자동재생 루프 썸네일.
+          base64 금지 — index.html 옆 media/ 폴더에 파일을 두고 같이 배포. 영상이 이미지보다 우선.
+  - 연락처: Contact 섹션 이메일·링크는 임시값 → 교체.
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>박연준</title>
+<meta name="description" content="시각 디자이너 박연준의 작업." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --bg:#F3FFB7;
+    --ink:#545E1F;
+    --ink-d:#3D4517;
+    --ink-50:#545E1F80;
+    --ink-35:#545E1F59;
+    --line:#545E1F26;
+    --sans:"Noto Sans", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    --mono:"Noto Sans", "Noto Sans KR", -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif;
+    --pad:clamp(18px, 3.5vw, 44px);
+    --maxw:1480px;
+    --gap:14px;
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  *,*::before,*::after{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; background:var(--bg); }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; overflow-x:hidden; }
+  img{ display:block; max-width:100%; }
+  a{ color:inherit; text-decoration:none; }
+  button{ font:inherit; color:inherit; cursor:pointer; background:none; border:none; }
+  ::selection{ background:var(--ink); color:var(--bg); }
+  :focus-visible{ outline:2px solid var(--ink); outline-offset:3px; }
+  .wrap{ width:100%; max-width:var(--maxw); margin-inline:auto; padding-inline:var(--pad); }
+  /* 모든 페이지를 최소 한 화면 이상으로 → 영양성분표 바닥 도킹 위치가 페이지 길이와 무관하게 일관됨 */
+  main{ display:block; min-height:calc(100dvh - 120px); }
+
+  /* NAV */
+  .nav{ position:sticky; top:0; z-index:50; background:var(--bg); }
+  .nav__in{ display:flex; align-items:center; justify-content:space-between; height:120px; }
+  .brand{ display:inline-flex; align-items:center; }
+  .glasses{ display:block; height:80px; width:auto; color:var(--ink); user-select:none; }
+  #eye-left.returning, #eye-right.returning{ transition:cx .9s cubic-bezier(.4,0,.2,1), cy .9s cubic-bezier(.4,0,.2,1); }
+  .nav__links{ display:flex; align-items:center; gap:.1rem; }
+  .nav__link{ font-family:"Noto Sans", var(--sans); font-size:1.2rem; letter-spacing:.05em; text-transform:uppercase; padding:.5rem .65rem; color:var(--ink-50); position:relative; transition:color .2s var(--ease); }
+  .nav__link:hover,.nav__link.is-active{ color:var(--ink); }
+  .nav__link.is-active{ font-weight:700; }   /* 밑줄 대신 굵게 (2026-07-11) */
+  .nav__burger{ display:none; width:36px; height:36px; place-items:center; }
+  .nav__burger span,.nav__burger span::before,.nav__burger span::after{ content:""; display:block; width:18px; height:1.5px; background:var(--ink); transition:transform .3s var(--ease); }
+  .nav__burger span{ position:relative; }
+  .nav__burger span::before{ position:absolute; top:-6px; left:0; }
+  .nav__burger span::after{ position:absolute; top:6px; left:0; }
+  body.menu-open .nav__burger span{ background:transparent; }
+  body.menu-open .nav__burger span::before{ transform:translateY(6px) rotate(45deg); }
+  body.menu-open .nav__burger span::after{ transform:translateY(-6px) rotate(-45deg); }
+
+  /* VIEW */
+  .view{ display:none; }
+  .view.is-active{ display:block; }
+
+  /* GRID (fnt) */
+  .grid-sec{ padding-top:clamp(22px,4vw,44px); padding-bottom:clamp(48px,7vw,96px); }
+  .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); }
+  .tile{ display:block; color:inherit; }
+  .tile__media{ display:block; width:100%; aspect-ratio:4/3; background:var(--ink); background-size:cover; background-position:center; }
+  .tile__title{ display:block; margin-top:.5rem; font-size:1.2rem; font-weight:500; line-height:1.25; letter-spacing:0; }
+  .grid .tile{ opacity:0; transform:translateY(20px); }
+  .grid.revealed .tile{ opacity:1; transform:none; transition:opacity .55s var(--ease), transform .55s var(--ease); }
+
+  /* MEDIA (video) */
+  .tile__media, .detail__media .full{ position:relative; overflow:hidden; }
+  .tile__media video, .detail__media .full video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* PAGE HEAD */
+  .phead{ padding-top:clamp(40px,7vw,84px); }
+  .label{ font-family:var(--mono); font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-50); }
+
+  /* DETAIL */
+  .detail{ padding-top:clamp(28px,5vw,56px); padding-bottom:clamp(48px,7vw,90px); }
+  .detail__top{ text-align:center; margin-bottom:clamp(30px,5vw,58px); }
+  .detail__title{ font-weight:800; font-size:clamp(2.1rem,5.5vw,3.7rem); line-height:1.02; letter-spacing:0; margin:0; }
+  .detail__sub{ font-family:var(--mono); font-size:.82rem; letter-spacing:.06em; color:var(--ink-35); margin-top:.9rem; }
+  .detail__intro{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(20px,3vw,40px); margin-bottom:clamp(34px,5vw,60px); }
+  .detail__intro p{ margin:0; font-size:1rem; line-height:1.72; }
+  .detail__intro p.lead{ font-weight:600; }
+  .detail__media{ display:flex; flex-direction:column; gap:var(--gap); }
+  .detail__media .full-media{ display:block; width:100%; height:auto; }      /* 원본 비율: 너비 고정·높이 가변 */
+  .detail__media .full--ph{ aspect-ratio:16/9; background:var(--ink); }       /* 미디어 없는 작업 플레이스홀더 */
+  .detail__photo{ text-align:center; font-family:var(--mono); font-size:.74rem; letter-spacing:.03em; color:var(--ink-35); margin:clamp(26px,4vw,44px) 0 0; }
+  .detail__credits{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(20px,4vw,48px); margin-top:clamp(34px,5vw,60px); padding-top:1.4rem; border-top:1px solid var(--ink); }
+  .detail__credits .col{ font-family:var(--mono); font-size:.8rem; line-height:1.9; color:var(--ink-70); }
+  .detail__credits .col b{ color:var(--ink-35); font-weight:400; display:inline-block; min-width:4.5em; }
+
+  /* ABOUT */
+  .about{ padding-top:clamp(16px,2vw,24px); padding-bottom:clamp(48px,7vw,90px); display:grid; grid-template-columns:300px 1fr; gap:clamp(28px,5vw,72px); align-items:start; }
+  .about__media{ aspect-ratio:3/4; background:var(--ink); }
+  .about__txt h1{ font-weight:800; font-size:clamp(1.7rem,4vw,2.6rem); line-height:1.05; letter-spacing:0; margin:0; }
+  .about__txt p{ margin:1.1rem 0 0; max-width:48ch; font-size:1.06rem; line-height:1.7; }
+  .about__caps{ margin:1.4rem 0 0; font-family:var(--mono); font-size:.78rem; letter-spacing:.03em; color:var(--ink-50); }
+  .about__mail{ display:inline-block; margin-top:1.6rem; font-weight:700; font-size:1.15rem; border-bottom:1.5px solid var(--ink); padding-bottom:.05em; }
+
+  /* CONTACT */
+  .contact{ min-height:54vh; display:flex; align-items:center; padding-bottom:clamp(48px,7vw,90px); }
+  .contact__mail{ display:inline-block; font-weight:800; font-size:clamp(1.6rem,5vw,3.6rem); letter-spacing:0; border-bottom:2px solid var(--ink); padding-bottom:.04em; transition:color .2s; }
+  .contact__mail:hover{ color:var(--ink-d); }
+  .contact__links{ margin-top:clamp(26px,4vw,40px); display:flex; flex-wrap:wrap; gap:.6rem; }
+  .contact__links a{ font-family:var(--mono); font-size:.82rem; padding:.5rem .9rem; border:1px solid var(--line); border-radius:999px; transition:border-color .2s; }
+  .contact__links a:hover{ border-color:var(--ink); }
+  .contact__note{ margin-top:1.6rem; font-family:var(--mono); font-size:.76rem; letter-spacing:.03em; color:var(--ink-50); }
+
+  /* EXHIBITION */
+  .exh{ padding-bottom:clamp(48px,7vw,90px); }
+  .exh__list{ list-style:none; margin:0; padding:0; border-top:1px solid var(--ink); }
+  .exh__row{ display:grid; grid-template-columns:4.5em 1fr auto; gap:1rem; align-items:baseline; padding:.85rem 0; border-bottom:1px solid var(--line); }
+  .exh__yr{ font-family:var(--mono); font-size:.74rem; color:var(--ink-35); }
+  .exh__t{ font-weight:500; }
+  .exh__v{ font-family:var(--mono); font-size:.74rem; color:var(--ink-50); }
+
+  /* COLOPHON (영양성분표) — sticky 빼꼼/도킹 + 클릭 펼침 + 언어 뒤집기(flip). 영문/한글 두 면 */
+  .colophon-dock{ position:sticky; z-index:40; pointer-events:none; }   /* bottom 오프셋은 JS가 카드 높이 기준으로 설정 */
+  .colophon-dock.cl-anim{ transition:bottom .42s var(--ease); }        /* 펼침/접힘 = sticky bottom 오프셋 애니메이션(클릭 시 1회). 스크롤 도킹은 네이티브 sticky라 안 떨림 */
+  .colophon{ width:353px; max-width:100%; margin-left:auto; margin-bottom:28px; color:var(--ink); cursor:pointer; pointer-events:auto; }
+  /* 두 면 공통 박스(높이 통일). 배경은 SVG 안 .cl-bg 사각형(테두리와 같은 좌표계라 1px 삐짐 없음) */
+  .cl-flip{ aspect-ratio:191.98 / 346.22; transform-origin:center; will-change:transform; }
+  .cl-face{ height:100%; }
+  .cl-face[hidden]{ display:none; }
+  .colophon-svg{ display:block; width:100%; height:100%; }
+  .colophon-svg text{ fill:currentColor; }
+  .colophon-svg rect{ fill:currentColor; }
+  .colophon-svg .cl-bg{ fill:var(--bg); }                        /* 라벨 배경(불투명) — SVG 내부라 테두리와 정확히 일치 */
+  .colophon-svg line{ stroke:currentColor; }
+  .colophon-svg .cl-frame{ fill:none; stroke:currentColor; }     /* 테두리 */
+  .colophon-svg .cl-invert{ fill:var(--bg); }                    /* 검정 제목바 위 글씨(한글판) → 배경색으로 가독 */
+  .colophon-svg .cl-langbtn{ fill:none; pointer-events:all; cursor:pointer; }  /* 언어 버튼 투명 hit-area */
+  .colophon-svg .cl-iglink{ fill:none; pointer-events:all; cursor:pointer; }   /* @greenteavillain → 인스타 투명 hit-area */
+  @media (prefers-reduced-motion:reduce){ .colophon-dock.cl-anim, .cl-flip{ transition-duration:.001ms !important; } }
+
+  /* RESPONSIVE */
+  @media (max-width:1080px){ .grid{ grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:860px){ .detail__intro{ grid-template-columns:1fr 1fr; } .about{ grid-template-columns:1fr; } .about__media{ max-width:260px; } }
+  @media (max-width:720px){
+    .nav__links{ position:fixed; inset:120px 0 auto 0; flex-direction:column; align-items:stretch; gap:0; background:var(--bg); padding:6px var(--pad) 16px; transform:translateY(calc(-100% - 136px)); transition:transform .38s var(--ease); }
+    body.menu-open .nav__links{ transform:none; border-bottom:1px solid var(--ink); box-shadow:0 18px 28px -24px rgba(0,0,0,.4); }
+    .exh__row{ grid-template-columns:3.5em 1fr; } .exh__v{ grid-column:2; color:var(--ink-35); }
+    .nav__link{ padding:.85rem .2rem; font-size:1.2rem; border-bottom:1px solid var(--line); }
+    .nav__burger{ display:grid; }
+    .grid{ grid-template-columns:repeat(2,1fr); }
+  }
+  @media (max-width:520px){ .grid{ grid-template-columns:1fr; gap:16px; } .detail__intro{ grid-template-columns:1fr; } .detail__credits{ grid-template-columns:1fr; gap:14px; } }
+  @media (prefers-reduced-motion:reduce){ *{ transition-duration:.001ms !important; scroll-behavior:auto; } .grid .tile{ opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav__in">
+    <a href="#" class="brand" data-go="work" aria-label="박연준 홈">
+      <svg class="glasses" viewBox="0 0 137.17 63.75" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="3" stroke-miterlimit="10" aria-hidden="true">
+        <circle cx="31.87" cy="31.87" r="30.37"/>
+        <circle cx="105.3" cy="31.87" r="30.37"/>
+        <line x1="62.25" y1="31.87" x2="74.93" y2="31.87"/>
+        <circle id="eye-left" cx="50.28" cy="31.87" r="4.85"/>
+        <circle id="eye-right" cx="123.68" cy="31.87" r="4.85"/>
+        <path id="lid-left" style="display:none" stroke-linejoin="round" stroke-linecap="round" d="M 19.87 12.87 L 51.87 31.87 L 19.87 50.87"/>
+        <path id="lid-right" style="display:none" stroke-linejoin="round" stroke-linecap="round" d="M 117.3 12.87 L 85.3 31.87 L 117.3 50.87"/>
+      </svg>
+    </a>
+    <button class="nav__burger" id="burger" aria-label="메뉴 열기" aria-expanded="false"><span></span></button>
+    <nav class="nav__links" id="navlinks">
+      <a class="nav__link" data-go="work">Work</a>
+      <a class="nav__link" data-go="exhibition">Exhibition</a>
+      <a class="nav__link" data-go="about">About</a>
+      <a class="nav__link" data-go="contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- WORK (랜딩 = 그리드) -->
+  <div class="view is-active" data-view="work">
+    <section class="wrap grid-sec">
+      <div class="grid" id="workGrid"></div>
+    </section>
+  </div>
+
+  <!-- PROJECT 상세 -->
+  <div class="view" data-view="project">
+    <section class="wrap detail" id="detailRoot"></section>
+  </div>
+
+  <!-- EXHIBITION -->
+  <div class="view" data-view="exhibition">
+    <section class="wrap phead"><span class="label">Exhibition</span><h1 data-ko="전시 · 페어" data-en="Exhibitions &amp; Fairs">전시 · 페어</h1><p data-ko="참여한 전시와 아트북 페어 기록입니다." data-en="A record of the exhibitions and art-book fairs I’ve taken part in.">참여한 전시와 아트북 페어 기록입니다.</p></section>
+    <section class="wrap exh">
+      <ul class="exh__list">
+        <li class="exh__row"><span class="exh__yr">2026</span><span class="exh__t" data-ko="메가지그재그 1st 진 &amp; 아트북 페어" data-en="MEGA zigzag — 1st Zine &amp; Artbook Fair">메가지그재그 1st 진 &amp; 아트북 페어</span><span class="exh__v" data-ko="서울 마포 · 공동기획" data-en="Mapo, Seoul · Co-organized">서울 마포 · 공동기획</span></li>
+        <li class="exh__row"><span class="exh__yr">2025</span><span class="exh__t">Threading Texts Art Book Festival</span><span class="exh__v" data-ko="xxpress, 서울 마포" data-en="xxpress, Mapo, Seoul">xxpress, 서울 마포</span></li>
+        <li class="exh__row"><span class="exh__yr">2025</span><span class="exh__t" data-ko="핑크아트페어" data-en="Pink Art Fair">핑크아트페어</span><span class="exh__v" data-ko="리수갤러리 초청" data-en="Invited by Lisu Gallery">리수갤러리 초청</span></li>
+        <li class="exh__row"><span class="exh__yr">2025</span><span class="exh__t" data-ko="봄에 피어나는 우리들의 전시" data-en="Our Exhibition, Blooming in Spring">봄에 피어나는 우리들의 전시</span><span class="exh__v" data-ko="리수갤러리" data-en="Lisu Gallery">리수갤러리</span></li>
+      </ul>
+    </section>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="view" data-view="about">
+    <section class="wrap phead"></section>
+    <section class="wrap about">
+      <div class="about__media" aria-hidden="true"></div>
+      <div class="about__txt">
+        <h1 data-ko="박연준" data-en="Park Yeonjun">박연준</h1>
+        <p data-ko="서울 기반 시각 디자이너이자 독립 만화가·레터러·타입 디자이너. 홍익대 시각디자인 학·석사. 타이포그래피를 축으로 만화·레터링·타입·웹을 오가며, ‘홖’이라는 이름으로 디자인과 출판을 합니다." data-en="A Seoul-based visual designer, independent cartoonist, letterer, and type designer. BFA & MFA in Visual Communication Design at Hongik University. With typography at the core, I move between comics, lettering, type, and the web — designing and publishing under the name 홖.">서울 기반 시각 디자이너이자 독립 만화가·레터러·타입 디자이너. 홍익대 시각디자인 학·석사. 타이포그래피를 축으로 만화·레터링·타입·웹을 오가며, ‘홖’이라는 이름으로 디자인과 출판을 합니다.</p>
+        <div class="about__caps" data-ko="브랜딩 · 타입/레터링 · 에디토리얼 · 만화/웹툰 · 인터랙티브 웹" data-en="Branding · Type/Lettering · Editorial · Comics/Webtoon · Interactive Web">브랜딩 · 타입/레터링 · 에디토리얼 · 만화/웹툰 · 인터랙티브 웹</div>
+        <a class="about__mail" href="mailto:hello@greenteavillain.com">hello@greenteavillain.com</a>
+      </div>
+    </section>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="view" data-view="contact">
+    <section class="wrap contact">
+      <div>
+        <a class="contact__mail" href="mailto:hello@greenteavillain.com">hello@greenteavillain.com</a>
+        <div class="contact__links">
+          <a href="https://instagram.com/greenteavillain" target="_blank" rel="noopener">Instagram ↗</a>
+          <a href="#" target="_blank" rel="noopener">Behance ↗</a>
+        </div>
+        <div class="contact__note" data-ko="프리랜스 의뢰 · 협업 환영" data-en="Open to freelance commissions & collaboration">프리랜스 의뢰 · 협업 환영</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="colophon-dock" id="colophon-dock">
+  <div class="wrap">
+<div class="colophon" id="colophon" role="button" tabindex="0" aria-expanded="false">
+      <div class="cl-flip" id="cl-flip">
+          <div class="cl-face" data-lang="en"><svg class="colophon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 191.98 346.22" preserveAspectRatio="none" role="img" aria-label="Colophon — © 2026 Park Yeonjun. Based Seoul, KR. Education Hongik Univ. BFA & MFA, Visual Communication Design. Practice Storytelling — Comics, Branding, Interactive, Lettering, Type, and more. Tap 한국어로 바꾸기 to switch to Korean. newspyj@naver.com @greenteavillain">
+  <defs>
+    <style>
+      .a-1 {
+        font-size: 8.09px;
+      }
+
+      .a-1, .a-2, .a-3, .a-4, .a-5, .a-6 {
+        font-family: NotoSans-Regular, 'Noto Sans';
+      }
+
+      .a-7 {
+        font-size: 17.46px;
+      }
+
+      .a-7, .a-8, .a-9 {
+        font-family: NotoSans-ExtraBold, 'Noto Sans';
+        font-weight: 700;
+      }
+
+      .a-10 {
+        font-family: 'Noto Sans KR';
+        font-weight: 500;
+      }
+
+      .a-10, .a-3, .a-11, .a-12 {
+        font-size: 10px;
+      }
+
+      .a-4, .a-13 {
+        letter-spacing: 0em;
+      }
+
+      .a-14 {
+        letter-spacing: 0em;
+      }
+
+      .a-8, .a-5, .a-15 {
+        letter-spacing: -.02em;
+      }
+
+      .a-16 {
+        letter-spacing: 0em;
+      }
+
+      .a-6 {
+        letter-spacing: -.04em;
+      }
+
+      .a-12 {
+        font-family: NotoSans-Italic, 'Noto Sans';
+        font-style: italic;
+      }
+
+      .a-17 {
+        fill: none;
+        stroke: #000;
+        stroke-miterlimit: 10;
+        stroke-width: 2px;
+      }
+
+      .a-18 {
+        letter-spacing: -.06em;
+      }
+
+      .a-19 {
+        letter-spacing: -.02em;
+      }
+
+      .a-20 {
+        letter-spacing: -.02em;
+      }
+
+      .a-21 {
+        letter-spacing: -.02em;
+      }
+
+      .a-22 {
+        letter-spacing: -.05em;
+      }
+    </style>
+  </defs>
+  <g id="_레이어_1-2" data-name="레이어 1"><rect class="cl-bg" x="1" y="1" width="189.98" height="344.22"/>
+    <rect x="5.42" y="323.71" width="181.15" height="4.54"/>
+    <text class="a-7" transform="translate(4.91 23.8)"><tspan x="0" y="0">© 2026 Park </tspan><tspan class="a-22" x="109.33" y="0">Y</tspan><tspan x="119.67" y="0">eonjun</tspan></text>
+    <text id="cl-mail-en" class="a-1" transform="translate(7.3 338.18)"><tspan x="0" y="0">n</tspan><tspan class="a-21" x="5" y="0">e</tspan><tspan class="a-14" x="9.4" y="0">ws</tspan><tspan class="a-19" x="19.64" y="0">p</tspan><tspan x="24.45" y="0">yj@nave</tspan><tspan class="a-18" x="56.15" y="0">r</tspan><tspan x="59" y="0">.com @g</tspan><tspan class="a-21" x="91.87" y="0">r</tspan><tspan class="a-16" x="95.04" y="0">eenteavillain</tspan></text>
+    <a href="https://instagram.com/greenteavillain" target="_blank" rel="noopener noreferrer"><rect class="cl-iglink" x="85.9" y="328.5" width="65.6" height="13.2"/></a>
+    <rect x="5.42" y="323.71" width="181.15" height=".55"/>
+    <rect x="5.42" y="32.19" width="181.15" height=".55"/>
+    <rect x="5.42" y="48.72" width="181.15" height="4.54"/>
+    <rect x="5.42" y="228.23" width="181.15" height="8.26"/>
+    <rect class="a-17 cl-frame" x="1" y="1" width="189.98" height="344.22"/>
+    <text class="a-10" transform="translate(7.16 44.47)"><tspan x="0" y="0">한국어로 바꾸기</tspan></text>
+    <g>
+      <rect x="5.42" y="210.68" width="181.15" height=".55"/>
+      <rect x="5.42" y="70.27" width="181.15" height=".55"/>
+      <rect x="5.42" y="87.82" width="181.15" height=".55"/>
+      <rect x="5.42" y="105.37" width="181.15" height=".55"/>
+      <rect x="5.42" y="122.92" width="181.15" height=".55"/>
+      <rect x="5.42" y="140.48" width="181.15" height=".55"/>
+      <rect x="5.42" y="158.03" width="181.15" height=".55"/>
+      <rect x="5.42" y="175.58" width="181.15" height=".55"/>
+      <rect x="5.42" y="193.13" width="181.15" height=".55"/>
+      <text class="a-11" transform="translate(7.2 65.57)"><tspan class="a-9" x="0" y="0">Based</tspan><tspan class="a-4" x="30.33" y="0" xml:space="preserve"> Seoul, KR</tspan></text>
+      <text class="a-11" transform="translate(7.2 83.12)"><tspan class="a-9" x="0" y="0">Education</tspan><tspan class="a-4" x="50.45" y="0" xml:space="preserve"> Hongik Uni</tspan><tspan class="a-6" x="105.43" y="0">v</tspan><tspan class="a-4" x="110.11" y="0">. B</tspan><tspan class="a-5" x="121.89" y="0">F</tspan><tspan class="a-2" x="126.88" y="0">A &amp; M</tspan><tspan class="a-5" x="154.86" y="0">F</tspan><tspan class="a-2" x="159.85" y="0">A,</tspan></text>
+      <text class="a-11" transform="translate(7.2 118.22)"><tspan class="a-9" x="0" y="0">P</tspan><tspan class="a-8" x="6.3" y="0">r</tspan><tspan class="a-9" x="10.71" y="0">actice</tspan><tspan class="a-4" x="40.99" y="0" xml:space="preserve"> Storytelling </tspan></text>
+      <text class="a-12" transform="translate(32.68 135.77)"><tspan x="0" y="0">Comics</tspan></text>
+      <text class="a-12" transform="translate(29.82 188.43)"><tspan x="0" y="0" xml:space="preserve"> Lettering</tspan></text>
+      <text class="a-12" transform="translate(32.96 205.98)"><tspan class="a-15" x="0" y="0">T</tspan><tspan class="a-13" x="4.81" y="0">ype</tspan></text>
+      <text class="a-12" transform="translate(32.68 223.53)"><tspan x="0" y="0">and mo</tspan><tspan class="a-20" x="34.24" y="0">r</tspan><tspan x="38.02" y="0">e</tspan></text>
+      <text class="a-12" transform="translate(32.23 153.32)"><tspan x="0" y="0">B</tspan><tspan class="a-20" x="6" y="0">r</tspan><tspan x="9.78" y="0">anding</tspan></text>
+      <text class="a-12" transform="translate(32.23 170.88)"><tspan x="0" y="0">Inte</tspan><tspan class="a-20" x="17.34" y="0">r</tspan><tspan x="21.12" y="0">active</tspan></text>
+      <text class="a-12" transform="translate(30.88 100.67)"><tspan x="0" y="0" xml:space="preserve"> Visual Communication Design</tspan></text>
+    </g>
+    <g>
+      <rect x="5.42" y="253.5" width="181.15" height=".55"/>
+      <rect x="5.42" y="271.05" width="181.15" height=".55"/>
+      <rect x="5.42" y="288.6" width="181.15" height=".55"/>
+      <rect x="5.42" y="306.15" width="181.15" height=".55"/>
+      <text class="a-3" transform="translate(7.51 319)"><tspan x="0" y="0">enough to make.</tspan></text>
+      <text class="a-3" transform="translate(7.61 301.45)"><tspan x="0" y="0">and the web—what</tspan><tspan class="a-15" x="91.48" y="0">e</tspan><tspan x="96.92" y="0">ver looks fun </tspan></text>
+      <text class="a-3" transform="translate(7.51 283.9)"><tspan x="0" y="0">comics, lettering, type, b</tspan><tspan class="a-15" x="114.98" y="0">r</tspan><tspan x="118.91" y="0">anding,</tspan></text>
+      <text class="a-3" transform="translate(7.51 266.35)"><tspan class="a-20" x="0" y="0">e</tspan><tspan x="5.44" y="0">verything is nar</tspan><tspan class="a-15" x="78.58" y="0">r</tspan><tspan x="82.51" y="0">ative. </tspan><tspan class="a-20" x="110.31" y="0">W</tspan><tspan x="119.41" y="0">orks ac</tspan><tspan class="a-15" x="152.73" y="0">r</tspan><tspan x="156.66" y="0">oss</tspan></text>
+      <text class="a-3" transform="translate(8.1 248.8)"><tspan x="0" y="0">A visual designer who beli</tspan><tspan class="a-20" x="121.91" y="0">e</tspan><tspan x="127.35" y="0">ves</tspan></text>
+    </g>
+  </g>
+<rect class="cl-langbtn" x="4" y="32" width="150" height="20"/></svg></div>
+          <div class="cl-face" data-lang="ko" hidden><svg class="colophon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 191.29 346.22" preserveAspectRatio="none" role="img" aria-label="콜로폰 — © 2026 박연준. 거점 서울, 대한민국. 학력 홍익대학교 학사·석사, 시각디자인. 분야 스토리텔링 — 만화, 브랜딩, 인터렉티브, 레터링, 글자, 그 외 다수. Switch to English 누르면 영어 전환. newspyj@naver.com @greenteavillain">
+  <defs>
+    <style>
+      .b-1 {
+        fill: #fff;
+        font-size: 19.87px;
+      }
+
+      .b-1, .b-2 {
+        font-family: 'Noto Sans KR';
+        font-weight: 800;
+      }
+
+      .b-3 {
+        font-family: 'Noto Sans KR';
+        font-size: 11.09px;
+        font-weight: 500;
+      }
+
+      .b-4 {
+        font-family: 'Noto Sans KR';
+        font-size: 9.98px;
+      }
+
+      .b-5 {
+        letter-spacing: 0em;
+      }
+
+      .b-6 {
+        letter-spacing: 0em;
+      }
+
+      .b-7 {
+        font-family: 'Noto Sans KR';
+      }
+
+      .b-7, .b-2 {
+        font-size: 11px;
+      }
+
+      .b-8 {
+        fill: none;
+        stroke: #000;
+        stroke-miterlimit: 10;
+        stroke-width: 2px;
+      }
+
+      .b-9 {
+        letter-spacing: -.06em;
+      }
+
+      .b-10 {
+        letter-spacing: -.02em;
+      }
+
+      .b-11 {
+        letter-spacing: -.01em;
+      }
+
+      .b-12 {
+        letter-spacing: -.02em;
+      }
+
+      .b-13 {
+        letter-spacing: -.02em;
+      }
+
+      .b-14 {
+        letter-spacing: -.01em;
+      }
+
+      .b-15 {
+        letter-spacing: -.02em;
+      }
+
+      .b-16 {
+        letter-spacing: 0em;
+      }
+
+      .b-17 {
+        letter-spacing: -.01em;
+      }
+
+      .b-18 {
+        letter-spacing: -.01em;
+      }
+
+      .b-19 {
+        letter-spacing: 0em;
+      }
+    </style>
+  </defs>
+  <g id="_레이어_1-2" data-name="레이어 1"><rect class="cl-bg" x="1" y="1" width="189.29" height="344.22"/>
+    <rect x="1" y="1" width="189.29" height="30.25"/>
+    <text class="b-1 cl-invert" transform="translate(7.52 23.62)"><tspan x="0" y="0">© 2026 박연준</tspan></text>
+    <text class="b-2" transform="translate(7.31 63.62)"><tspan x="0" y="0">거점</tspan></text>
+    <text class="b-2" transform="translate(7.15 83.68)"><tspan x="0" y="0">학력</tspan></text>
+    <text class="b-2" transform="translate(7.14 122.59)"><tspan x="0" y="0">분야</tspan></text>
+    <text id="cl-mail-ko" class="b-4" transform="translate(6.74 338.6)"><tspan x="0" y="0">n</tspan><tspan class="b-19" x="6.04" y="0">e</tspan><tspan class="b-5" x="11.59" y="0">ws</tspan><tspan class="b-16" x="24.11" y="0">p</tspan><tspan class="b-17" x="30.21" y="0">y</tspan><tspan x="35.21" y="0">j@na</tspan><tspan class="b-16" x="58.86" y="0">v</tspan><tspan x="63.92" y="0">e</tspan><tspan class="b-9" x="69.4" y="0">r</tspan><tspan class="b-14" x="72.61" y="0">.</tspan><tspan class="b-10" x="75.17" y="0">c</tspan><tspan x="80" y="0" xml:space="preserve">om  @g</tspan><tspan class="b-18" x="114.53" y="0">r</tspan><tspan x="118.2" y="0">een</tspan><tspan class="b-11" x="135.2" y="0">t</tspan><tspan class="b-15" x="138.74" y="0">e</tspan><tspan x="144.06" y="0">avillain</tspan></text>
+    <a href="https://instagram.com/greenteavillain" target="_blank" rel="noopener noreferrer"><rect class="cl-iglink" x="106.6" y="325.9" width="78.9" height="16.7"/></a>
+    <text class="b-7" transform="translate(40.65 142.04)"><tspan x="0" y="0">만화</tspan></text>
+    <text class="b-7" transform="translate(40.78 200.35)"><tspan x="0" y="0">레터링</tspan></text>
+    <text class="b-7" transform="translate(41.12 219.78)"><tspan x="0" y="0">글자</tspan></text>
+    <text class="b-7" transform="translate(41.11 239.21)"><tspan x="0" y="0">그 외 다수</tspan></text>
+    <text class="b-7" transform="translate(41.12 161.47)"><tspan x="0" y="0">브랜딩</tspan></text>
+    <text class="b-7" transform="translate(40.85 180.9)"><tspan x="0" y="0">인터렉티브</tspan></text>
+    <text class="b-3" transform="translate(7.05 44.46)"><tspan x="0" y="0">Swi</tspan><tspan class="b-12" x="19.11" y="0">t</tspan><tspan class="b-6" x="23.32" y="0">ch </tspan><tspan class="b-13" x="38.43" y="0">t</tspan><tspan x="42.64" y="0">o English</tspan></text>
+    <rect x="1" y="224.89" width="189.29" height=".67"/>
+    <rect x="1" y="265.52" width="189.29" height=".67"/>
+    <rect x="1" y="285.06" width="189.29" height=".67"/>
+    <rect x="1" y="304.6" width="189.29" height=".67"/>
+    <rect x="1" y="68.57" width="189.29" height=".67"/>
+    <rect x="1" y="88.11" width="189.29" height=".67"/>
+    <rect x="1" y="107.65" width="189.29" height=".67"/>
+    <rect x="1" y="127.19" width="189.29" height=".67"/>
+    <rect x="1" y="146.73" width="189.29" height=".67"/>
+    <rect x="1" y="166.27" width="189.29" height=".67"/>
+    <rect x="1" y="185.81" width="189.29" height=".67"/>
+    <rect x="1" y="205.35" width="189.29" height=".67"/>
+    <text class="b-7" transform="translate(41.17 103.13)"><tspan x="0" y="0">시각디자인</tspan></text>
+    <rect class="b-8 cl-frame" x="1" y="1" width="189.29" height="344.22"/>
+    <text class="b-7" transform="translate(6.95 260.85)"><tspan x="0" y="0">무엇이든 이야기가 된다고</tspan></text>
+    <text class="b-7" transform="translate(4.47 299.21)"><tspan x="0" y="0" xml:space="preserve"> 브랜딩, 웹을 가리지 않고</tspan></text>
+    <text class="b-7" transform="translate(6.93 279.72)"><tspan x="0" y="0">생각합니다. 만화, 레터링, 타입,</tspan></text>
+    <rect x="1" y="48.6" width="189.29" height="1.11"/>
+    <text class="b-7" transform="translate(41.12 83.68)"><tspan x="0" y="0">홍익대학교 학사·석사</tspan></text>
+    <text class="b-7" transform="translate(41.12 63.62)"><tspan x="0" y="0">서울, 대한민국</tspan></text>
+    <text class="b-7" transform="translate(41.12 122.59)"><tspan x="0" y="0">스토리텔링</tspan></text>
+    <text class="b-7" transform="translate(7.04 319.47)"><tspan x="0" y="0">재미있어 보이면 일단 만듭니다.</tspan></text>
+    <line class="b-8" x1="190.29" y1="245.54" x2="1" y2="245.54"/>
+    <line class="b-8" x1="190.29" y1="325.24" x2="1" y2="325.24"/>
+  </g>
+<rect class="cl-langbtn" x="4" y="32" width="150" height="20"/></svg></div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROJECTS = [
+  { id:"matcha", title:"말차 소금 여행기", titleEn:"Matcha Salt: A Travelogue", cat:"만화", year:"2025", role:"작·화·디자인·식자", tools:"Clip Studio · InDesign", tone:"#545E1F", image:"", video:"",
+    summary:"도쿄를 걸으며 먹고 본 것들을 옮긴 여행 에세이 만화. JIS B6 단행본으로 준비 중.",
+    body:["도쿄에서 보낸 며칠을 짧은 장면들로 엮은 여행 에세이 만화입니다. 거창한 사건보다 골목, 간판, 한 끼의 온도 같은 작은 감각에 집중했습니다.","Clip Studio Paint 원고를 InDesign으로 옮겨 JIS B6(128×182mm) 단행본으로 인쇄 제작하고 있습니다."],
+    summaryEn:"A travel-essay comic of things eaten and seen while walking Tokyo. In progress as a JIS B6 book.",
+    bodyEn:["A travel-essay comic that strings a few days in Tokyo into short scenes — focusing on small senses like alleys, signage, and the warmth of a single meal rather than big events.","The Clip Studio Paint artwork is being laid out in InDesign and printed as a JIS B6 (128×182mm) book."] },
+  { id:"somido", title:"소미도 근무일지", titleEn:"The Somido Duty Log", cat:"만화", year:"2024–", role:"작·화", tools:"Clip Studio", tone:"#3D4517", image:"", video:"",
+    summary:"작은 섬 부대에서의 복무를 기록한 자전적 웹툰.",
+    body:["해안의 작은 섬 부대에서 보낸 시간을 기록한 자전적 웹툰입니다. 매일의 단조로움과 그 안의 장면들을 담담하게 옮겼습니다.","두 권 분량으로 구조를 짜고 에피소드 단위로 이어가는 장기 연재 작업입니다."],
+    summaryEn:"An autobiographical webtoon recording service at a small island base.",
+    bodyEn:["An autobiographical webtoon recording time spent at a small coastal island base — quietly capturing the daily monotony and the scenes within it.","A long-running series structured across two volumes and continued episode by episode."] },
+  { id:"janflower", title:"잔꽃 패턴 메이커", titleEn:"Janflower Pattern Maker", cat:"인터랙티브·웹", year:"2025", role:"기획·디자인·개발", tools:"HTML · Canvas · JS", tone:"#6E7A2C", image:"", video:"media/janflower.mp4", detailVideo:"media/janflower-full.mp4",
+    summary:"브라우저에서 한국 전통 잔꽃 패턴을 만들고 내보내는 도구.",
+    body:["전통 ‘잔꽃’ 문양을 누구나 브라우저에서 조합하고 변주해 내보낼 수 있는 패턴 생성 도구입니다.","Figma 스타일 인터페이스, 모바일 UX, 확장된 프리셋 라이브러리까지 한 차례 크게 개편했습니다."],
+    summaryEn:"A browser tool for making and exporting traditional Korean ‘janflower’ patterns.",
+    bodyEn:["A pattern generator that lets anyone combine and vary traditional ‘janflower’ motifs in the browser and export them.","Reworked once at scale — a Figma-style interface, mobile UX, and an expanded preset library."] },
+  { id:"floe", title:"floe", titleEn:"floe", cat:"브랜딩", year:"2025", role:"네이밍·아이덴티티·모션", tools:"Illustrator · SVG", tone:"#8A9442", image:"", video:"",
+    summary:"네이밍부터 워드마크, 모션 아이덴티티까지 만든 브랜드.",
+    body:["이름 짓기에서 출발해 브랜드 에센스, 비주얼 아이덴티티, 워드마크 로고와 모션까지 처음부터 구축한 작업입니다.","stroke-dashoffset 기반 SVG 로고 애니메이션에서 속도의 연속성과 마스킹 규칙을 세밀하게 다뤘습니다."],
+    summaryEn:"A brand built from naming through wordmark to motion identity.",
+    bodyEn:["Built from the ground up — starting with the name, then brand essence, visual identity, the wordmark logo, and motion.","In the stroke-dashoffset–based SVG logo animation, I carefully handled continuity of speed and masking rules."] },
+  { id:"popvoca", title:"popVOCA", titleEn:"popVOCA", cat:"브랜딩", year:"2024", role:"브랜딩·UI", tools:"Brand · UI", tone:"#98A24C", image:"", video:"",
+    summary:"‘계단’ 메타포의 단어 학습 앱. 브랜딩과 UI.",
+    body:["단어가 한 칸씩 쌓이는 ‘계단’ 메타포를 중심에 둔 단어 학습 앱의 브랜딩과 UI 작업입니다.","간격 반복(SRS) 학습 흐름을 시각 언어와 아이콘, 앱 아이콘까지 일관되게 풀어냈습니다."],
+    summaryEn:"A vocabulary app on a ‘staircase’ metaphor. Branding and UI.",
+    bodyEn:["Branding and UI for a vocabulary app centered on a ‘staircase’ metaphor, where words stack one step at a time.","The spaced-repetition (SRS) learning flow runs consistently through the visual language, icons, and app icon."] },
+  { id:"janflower-market", title:"잔꽃시장", titleEn:"Janflower Market", cat:"브랜딩", year:"—", role:"—", tools:"—", tone:"#7C8836", image:"data:image/png;base64,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", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"void", title:"VOID", titleEn:"VOID", cat:"브랜딩", year:"—", role:"—", tools:"—", tone:"#49531B", image:"media/void.jpg", video:"", detailImage:"media/void-full.jpg",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"rangrang", title:"랑랑별체", titleEn:"Rangrangbyeol Typeface", cat:"타이포·레터링", year:"—", role:"—", tools:"—", tone:"#98A24C", image:"", video:"media/rangrang.mp4",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"secret-garden", title:"비밀의 화원", titleEn:"Secret Garden", cat:"타이포·레터링", year:"—", role:"—", tools:"—", tone:"#5F6B26", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"maekbook", title:"맥Book", titleEn:"맥Book", cat:"에디토리얼", year:"—", role:"—", tools:"—", tone:"#3D4517", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"gtv2026", title:"2026@greenteavillain", titleEn:"2026@greenteavillain", cat:"인터랙티브·웹", year:"—", role:"—", tools:"—", tone:"#6E7A2C", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"moving-focus", title:"Moving Focus", titleEn:"Moving Focus", cat:"인터랙티브·웹", year:"—", role:"—", tools:"—", tone:"#8A9442", image:"", video:"media/moving-focus.mp4", detailVideo:"media/moving-focus-full.mp4",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"tea-sip", title:"차 한 모금", titleEn:"A Sip of Tea", cat:"만화", year:"—", role:"—", tools:"—", tone:"#5F6B26", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"haru", title:"하루", titleEn:"Haru", cat:"만화", year:"—", role:"—", tools:"—", tone:"#8A9442", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"smallest-comic", title:"세상에서 가장 작은 만화", titleEn:"The World's Smallest Comic", cat:"만화", year:"—", role:"—", tools:"—", tone:"#46501B", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"smallest-webtoon", title:"세상에서 가장 작은 웹툰", titleEn:"The World's Smallest Webtoon", cat:"만화", year:"—", role:"—", tools:"—", tone:"#6E7A2C", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"mega-zigzag", title:"MEGA zigzag 1st ZINE & ARTBOOK FAIR", titleEn:"MEGA zigzag 1st ZINE & ARTBOOK FAIR", cat:"브랜딩", year:"—", role:"—", tools:"—", tone:"#98A24C", image:"media/mega-zigzag.jpg", video:"", detailImage:"media/mega-zigzag-full.jpg",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"nyc-2026", title:"2026 연하장", titleEn:"2026 New Year's Card", cat:"에디토리얼", year:"—", role:"—", tools:"—", tone:"#3D4517", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"hard-to-say", title:"입에 담기 어려운", titleEn:"Hard to Say", cat:"만화", year:"—", role:"—", tools:"—", tone:"#7C8836", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"erratogram", title:"eRRatogram", titleEn:"eRRatogram", cat:"타이포·레터링", year:"—", role:"—", tools:"—", tone:"#545E1F", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"half-past-two", title:"오후 두 시 반", titleEn:"Half Past Two", cat:"브랜딩", year:"—", role:"—", tools:"—", tone:"#5F6B26", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"tea-party", title:"티파티", titleEn:"Tea Party", cat:"브랜딩", year:"—", role:"—", tools:"—", tone:"#2F3611", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"earth-escape", title:"지구탈출", titleEn:"z9break", cat:"만화", year:"—", role:"—", tools:"—", tone:"#5F6B26", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"unfold-fold", title:"펼쳐 눌러 접기", titleEn:"Unfold, Press, Fold", cat:"인터랙티브·웹", year:"—", role:"—", tools:"—", tone:"#8A9442", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"haeppi", title:"해삐", titleEn:"Haeppi", cat:"만화", year:"—", role:"—", tools:"—", tone:"#6E7A2C", image:"", video:"",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] },
+  { id:"365days", title:"365days", titleEn:"365days", cat:"브랜딩", year:"—", role:"—", tools:"—", tone:"#545E1F", image:"", video:"media/365days.mp4", detailVideo:"media/365days-full.mp4",
+    summary:"준비 중인 작업입니다.",
+    body:["설명을 추가할 예정입니다."] }
+];
+
+const $  = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const idxOf = id => PROJECTS.findIndex(p=>p.id===id);
+const reduceMotion = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+/* ===== i18n: 콜로폰 번역버튼이 사이트 전체 언어를 토글(실시간 번역 아님 — 미리 넣은 영어 문자열로 교체).
+   고유명사(floe·VOID 등)는 title===titleEn이라 한글모드에서도 영어 그대로 = 자동 처리. */
+let LANG = (function(){ try{ return localStorage.getItem('pp-lang')==='en' ? 'en' : 'ko'; }catch(e){ return 'ko'; } })();
+const CURRENT = { view:'work', id:null };   // 언어 전환 시 현재 화면 다시 그리려고 추적
+const CAT_EN = { '만화':'Comics', '브랜딩':'Branding', '인터랙티브·웹':'Interactive · Web', '타이포·레터링':'Type · Lettering', '에디토리얼':'Editorial' };
+const ROLE_EN = { '작':'Story','화':'Art','디자인':'Design','식자':'Typesetting','기획':'Concept','개발':'Development','네이밍':'Naming','아이덴티티':'Identity','모션':'Motion','브랜딩':'Branding','UI':'UI','레터링':'Lettering' };
+const tTitle   = p => (LANG==='en' && p.titleEn) ? p.titleEn : p.title;
+const tCat     = p => (LANG==='en') ? (CAT_EN[p.cat] || p.cat) : p.cat;
+const tRole    = p => (LANG==='en') ? (p.role||'').split('·').map(s=>ROLE_EN[s.trim()]||s.trim()).join(' · ') : p.role;
+const tSummary = p => (LANG==='en') ? (p.summaryEn || 'This work is in progress.') : p.summary;
+const tBody    = p => (LANG==='en') ? (p.bodyEn || ['A fuller description is on the way.']) : p.body;
+
+// 빈 썸네일(이미지·영상 둘 다 없음)은 어두운 tone 대신 밝은 톤. id 해시로 팔레트에서 골라 작업마다 살짝 다르게(배경 #F3FFB7과는 구분되는 라이트 세이지/올리브).
+const LIGHT_TONES = ['#C9D89B','#BFD08C','#D2DCA0','#C4CE8A','#CCD992','#B9C77F','#D6DDA2','#C0CD95'];
+const lightTone = p => LIGHT_TONES[[...p.id].reduce((a,c)=>a+c.charCodeAt(0),0) % LIGHT_TONES.length];
+const bgOf = p => (p.image && p.image.trim()) ? `background-image:url('${p.image}')` : `background:${lightTone(p)}`;
+const hasVid = p => p.video && p.video.trim();
+const vidHTML = p => `<video autoplay muted loop playsinline preload="metadata"><source src="${p.video}" type="video/mp4"></video>`;
+const mediaStyle = p => hasVid(p) ? `background:${p.tone}` : bgOf(p);
+// 상세페이지용: 고해상(detailVideo/detailImage 우선, 없으면 썸네일) 미디어를 원본 비율로 렌더(너비 100%·높이 auto)
+const detailMediaHTML = p => {
+  const dv = (p.detailVideo && p.detailVideo.trim()) || (p.video && p.video.trim());
+  const di = (p.detailImage && p.detailImage.trim()) || (p.image && p.image.trim());
+  if(dv) return `<video class="full-media" autoplay muted loop playsinline preload="metadata"><source src="${dv}" type="video/mp4"></video>`;
+  if(di) return `<img class="full-media" src="${di}" alt="${p.title}">`;
+  return `<div class="full--ph" style="background:${lightTone(p)}"></div>`;
+};
+
+function tileHTML(p){
+  return `<a class="tile" data-open="${p.id}" role="button" tabindex="0" aria-label="${tTitle(p)}">
+    <span class="tile__media" style="${mediaStyle(p)}">${hasVid(p)?vidHTML(p):""}</span>
+    <span class="tile__title">${tTitle(p)}</span>
+  </a>`;
+}
+function renderGrid(target, list){
+  target.classList.remove("revealed");
+  target.innerHTML = list.map(tileHTML).join("");
+  $$(".tile", target).forEach(t=> t.addEventListener("click", ()=> navigate("project", t.dataset.open)));
+  if(reduceMotion){ target.classList.add("revealed"); return; }
+  $$(".tile", target).forEach((t,i)=> t.style.transitionDelay = (i*40)+"ms");
+  requestAnimationFrame(()=> requestAnimationFrame(()=> target.classList.add("revealed")));
+}
+// 상세 내용만 그림(언어 전환 시 스크롤·뷰전환 없이 재렌더하려고 분리)
+function renderDetail(p){
+  $("#detailRoot").innerHTML = `
+    <header class="detail__top">
+      <h1 class="detail__title">${tTitle(p)}</h1>
+      <div class="detail__sub">${LANG==='en' ? tCat(p) : (p.titleEn + ' · ' + p.cat)}</div>
+    </header>
+    <div class="detail__intro">
+      ${[`<p class="lead">${tSummary(p)}</p>`, ...tBody(p).map(t=>`<p>${t}</p>`)].join("")}
+    </div>
+    <div class="detail__media">
+      ${detailMediaHTML(p)}
+    </div>
+    <div class="detail__credits">
+      <div class="col"><b>Role</b> ${tRole(p)}<br><b>Field</b> ${tCat(p)}</div>
+      <div class="col"><b>Year</b> ${p.year}<br><b>Tools</b> ${p.tools}</div>
+    </div>`;
+}
+function openProject(id){
+  const i = idxOf(id); if(i<0) return;
+  renderDetail(PROJECTS[i]);
+  showView("project");
+}
+const NAV_FOR = { work:"work", project:"work", exhibition:"exhibition", about:"about", contact:"contact" };
+function showView(name){
+  $$(".view").forEach(v=> v.classList.toggle("is-active", v.dataset.view===name));
+  const navName = NAV_FOR[name] || name;
+  $$(".nav__link").forEach(l=> l.classList.toggle("is-active", l.dataset.go===navName));
+  document.body.classList.remove("menu-open");
+  $("#burger").setAttribute("aria-expanded","false");
+  window.scrollTo({ top:0, behavior: reduceMotion ? "auto" : "smooth" });
+  if(window.__colophonLayout) requestAnimationFrame(window.__colophonLayout);
+}
+
+/* 라우팅 — 브라우저 뒤로/앞으로가 동작하도록 뷰 상태를 History API에 기록.
+   (이전엔 JS로 화면만 바꾸고 히스토리에 안 쌓아서 뒤로가기가 안 됐음) */
+function hashFor(view, id){
+  if(view === "project" && id) return "#/work/" + id;
+  if(view && view !== "work") return "#/" + view;
+  return "#/";
+}
+function applyRoute(view, id){
+  if(view === "project" && id && idxOf(id) >= 0){ CURRENT.view = "project"; CURRENT.id = id; openProject(id); }
+  else { const v = ["exhibition","about","contact"].includes(view) ? view : "work"; CURRENT.view = v; CURRENT.id = null; showView(v); }
+}
+
+/* 언어 전환: 정적 텍스트(data-ko/data-en) 교체 + 그리드 제목 교체 + 현재 상세 재렌더 + 콜로폰 면 전환.
+   콜로폰 번역버튼(flip)과 init이 이걸 호출 → 사이트 전체가 한 언어 상태로 동기. */
+function updateGridLang(){
+  $$("#workGrid .tile").forEach(t=>{
+    const p = PROJECTS[idxOf(t.dataset.open)]; if(!p) return;
+    t.setAttribute('aria-label', tTitle(p));
+    const tt = $(".tile__title", t); if(tt) tt.textContent = tTitle(p);
+  });
+}
+window.applySiteLang = function(l){
+  LANG = (l === 'en') ? 'en' : 'ko';
+  try{ localStorage.setItem('pp-lang', LANG); }catch(e){}
+  document.documentElement.lang = LANG;
+  $$('[data-ko]').forEach(el=>{ el.textContent = (LANG==='en') ? (el.dataset.en || el.dataset.ko) : el.dataset.ko; });
+  updateGridLang();
+  if(CURRENT.view === "project" && CURRENT.id){ const i = idxOf(CURRENT.id); if(i>=0) renderDetail(PROJECTS[i]); }
+  if(window.__colophonSetLang) window.__colophonSetLang(LANG);
+};
+function routeFromHash(){
+  const h = (location.hash || "").replace(/^#\/?/, "");
+  if(!h) return { view:"work", id:null };
+  const parts = h.split("/");
+  if(parts[0] === "work" && parts[1]) return { view:"project", id:decodeURIComponent(parts[1]) };
+  if(["exhibition","about","contact"].includes(parts[0])) return { view:parts[0], id:null };
+  return { view:"work", id:null };
+}
+function navigate(view, id){
+  // 작업 상세만 주소에 #/work/id 부여(공유 가능). 섹션(work/about 등)은 주소를 깨끗하게 유지(해시 제거).
+  const url = (view === "project" && id) ? hashFor("project", id) : (location.pathname + location.search);
+  history.pushState({ view:view, id:(view === "project" ? (id||null) : null) }, "", url);
+  applyRoute(view, id);
+}
+function init(){
+  renderGrid($("#workGrid"), PROJECTS);
+  $$("[data-go]").forEach(a=> a.addEventListener("click",(e)=>{ e.preventDefault(); navigate(a.dataset.go); }));
+  window.addEventListener("popstate", (e)=>{ const s = e.state || routeFromHash(); applyRoute(s.view, s.id); });
+  const r0 = routeFromHash();
+  const url0 = (r0.view === "project" && r0.id) ? hashFor("project", r0.id) : (location.pathname + location.search);
+  history.replaceState({ view:r0.view, id:r0.id }, "", url0);
+  applyRoute(r0.view, r0.id);
+  window.applySiteLang(LANG);   // 저장된/기본 언어로 정적텍스트·콜로폰까지 동기(그리드는 이미 LANG으로 렌더됨)
+  $("#burger").addEventListener("click", ()=>{
+    const open = document.body.classList.toggle("menu-open");
+    $("#burger").setAttribute("aria-expanded", open?"true":"false");
+  });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape"){ document.body.classList.remove("menu-open"); } });
+}
+document.addEventListener("DOMContentLoaded", init);
+</script>
+
+<script>
+/* 안경 로고 — 눈동자가 커서를 따라봄. 창 밖으로 나가면 관성 회전 후 기본자세 복귀, 10초 무동작 시 좌우 둘러보기. */
+(function eyeTracker() {
+  const leftEye  = document.getElementById('eye-left');
+  const rightEye = document.getElementById('eye-right');
+  const leftLid  = document.getElementById('lid-left');
+  const rightLid = document.getElementById('lid-right');
+  if (!leftEye || !rightEye) return;
+  const svg = leftEye.ownerSVGElement;
+
+  const VB_W = 137.17, VB_H = 63.75;
+  const LENS_RADIUS = 30.37;
+  const LENS = [
+    { eye: leftEye,  lid: leftLid,  cx: 31.87,  cy: 31.87, orbit: 18.41, defaultCx: 50.28,  defaultCy: 31.87 },
+    { eye: rightEye, lid: rightLid, cx: 105.30, cy: 31.87, orbit: 18.38, defaultCx: 123.68, defaultCy: 31.87 }
+  ];
+  const angles = [0, 0];
+  const radii  = [LENS[0].orbit, LENS[1].orbit];
+  const angVel = [0, 0];
+
+  let pending = false, lastX = 0, lastY = 0, lastUpdate = 0;
+  let inertiaRaf = null, returnTimer = null;
+  let idleWaitTimer = null, idleInterval = null, idleAnimRaf = null;
+  let idleAngle = 0;
+  let catchUpRaf = null;
+  let cursorOutside = false;
+  let blinking = false;
+
+  const IDLE_WAIT_MS = 10000;
+  const IDLE_LOOK_MS = 1500;
+  const CATCH_UP_MS  = 450;
+
+  function setEye(lens, angle, radius) {
+    lens.eye.setAttribute('cx', lens.cx + Math.cos(angle) * radius);
+    lens.eye.setAttribute('cy', lens.cy + Math.sin(angle) * radius);
+  }
+  function setEyeClosed(lens, closed) {
+    if (closed) { lens.eye.style.display = 'none'; lens.lid.style.display = 'block'; }
+    else { lens.eye.style.display = ''; lens.lid.style.display = 'none'; }
+  }
+  function updateLids(sx, sy) {
+    if (blinking) return;   // 깜빡 중엔 커서 기반 눈꺼풀 갱신 보류
+    for (let i = 0; i < LENS.length; i++) {
+      const lens = LENS[i];
+      const d = Math.hypot(sx - lens.cx, sy - lens.cy);
+      setEyeClosed(lens, d < LENS_RADIUS - 1.5);
+    }
+  }
+  function setLidsOpen() { for (const lens of LENS) setEyeClosed(lens, false); }
+  // 클릭(내비게이션) 시 안경이 눈 한 번 깜빡 — 기존 눈꺼풀(lid) path 재활용. reduce-motion이면 생략.
+  function blink() {
+    if (blinking) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+    blinking = true;
+    setEyeClosed(LENS[0], true); setEyeClosed(LENS[1], true);
+    setTimeout(function () {
+      blinking = false;
+      setEyeClosed(LENS[0], false); setEyeClosed(LENS[1], false);
+    }, 150);
+  }
+  window.__blink = blink;
+  document.addEventListener('click', blink);   // 페이지 아무 데나 클릭하면 안경이 깜빡
+  function cancelLeaveBehavior() {
+    if (inertiaRaf)  { cancelAnimationFrame(inertiaRaf); inertiaRaf = null; }
+    if (returnTimer) { clearTimeout(returnTimer); returnTimer = null; }
+    leftEye.classList.remove('returning');
+    rightEye.classList.remove('returning');
+  }
+
+  function smoothLook(targetAngle, durationMs) {
+    if (idleAnimRaf) { cancelAnimationFrame(idleAnimRaf); idleAnimRaf = null; }
+    leftEye.classList.remove('returning');
+    rightEye.classList.remove('returning');
+    const startAngles = [angles[0], angles[1]];
+    const deltaAngles = [];
+    for (let i = 0; i < LENS.length; i++) {
+      let delta = targetAngle - startAngles[i];
+      while (delta >  Math.PI) delta -= 2 * Math.PI;
+      while (delta < -Math.PI) delta += 2 * Math.PI;
+      deltaAngles.push(delta);
+    }
+    const startRadii  = [radii[0], radii[1]];
+    const targetRadii = [LENS[0].orbit, LENS[1].orbit];
+    const startTime = performance.now();
+    function tick(now) {
+      const t = Math.min((now - startTime) / durationMs, 1);
+      const e = 1 - Math.pow(1 - t, 3);
+      for (let i = 0; i < LENS.length; i++) {
+        angles[i] = startAngles[i] + deltaAngles[i] * e;
+        radii[i]  = startRadii[i]  + (targetRadii[i] - startRadii[i]) * e;
+        setEye(LENS[i], angles[i], radii[i]);
+      }
+      idleAnimRaf = t < 1 ? requestAnimationFrame(tick) : null;
+    }
+    idleAnimRaf = requestAnimationFrame(tick);
+  }
+  function doIdleLook() { idleAngle = (idleAngle === 0) ? Math.PI : 0; smoothLook(idleAngle, IDLE_LOOK_MS); }
+  function cancelIdle() {
+    if (idleWaitTimer) { clearTimeout(idleWaitTimer); idleWaitTimer = null; }
+    if (idleInterval)  { clearInterval(idleInterval);  idleInterval  = null; }
+    if (idleAnimRaf)   { cancelAnimationFrame(idleAnimRaf); idleAnimRaf = null; }
+  }
+  function scheduleIdle() {
+    cancelIdle();
+    idleAngle = 0;
+    idleWaitTimer = setTimeout(() => {
+      setLidsOpen();
+      doIdleLook();
+      idleInterval = setInterval(doIdleLook, IDLE_WAIT_MS);
+    }, IDLE_WAIT_MS);
+  }
+
+  function smoothCatchUp(durationMs) {
+    if (catchUpRaf)  { cancelAnimationFrame(catchUpRaf);  catchUpRaf  = null; }
+    if (idleAnimRaf) { cancelAnimationFrame(idleAnimRaf); idleAnimRaf = null; }
+    leftEye.classList.remove('returning');
+    rightEye.classList.remove('returning');
+    const startAngles = [angles[0], angles[1]];
+    const startRadii  = [radii[0],  radii[1]];
+    const startTime = performance.now();
+    function tick(now) {
+      const t = Math.min((now - startTime) / durationMs, 1);
+      const e = 1 - Math.pow(1 - t, 3);
+      const rect = svg.getBoundingClientRect();
+      if (!rect.width) { catchUpRaf = requestAnimationFrame(tick); return; }
+      const sx = ((lastX - rect.left) / rect.width)  * VB_W;
+      const sy = ((lastY - rect.top)  / rect.height) * VB_H;
+      updateLids(sx, sy);
+      for (let i = 0; i < LENS.length; i++) {
+        const lens = LENS[i];
+        const dx = sx - lens.cx, dy = sy - lens.cy;
+        const d  = Math.hypot(dx, dy);
+        const targetAngle  = d > 0.001 ? Math.atan2(dy, dx) : startAngles[i];
+        const targetRadius = Math.min(d, lens.orbit);
+        let delta = targetAngle - startAngles[i];
+        while (delta >  Math.PI) delta -= 2 * Math.PI;
+        while (delta < -Math.PI) delta += 2 * Math.PI;
+        angles[i] = startAngles[i] + delta * e;
+        radii[i]  = startRadii[i]  + (targetRadius - startRadii[i]) * e;
+        setEye(lens, angles[i], radii[i]);
+      }
+      catchUpRaf = t < 1 ? requestAnimationFrame(tick) : null;
+    }
+    catchUpRaf = requestAnimationFrame(tick);
+  }
+
+  function update() {
+    pending = false;
+    if (catchUpRaf) return;
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width) return;
+    const sx = ((lastX - rect.left) / rect.width)  * VB_W;
+    const sy = ((lastY - rect.top)  / rect.height) * VB_H;
+    updateLids(sx, sy);
+    const now = performance.now();
+    const dt = lastUpdate > 0 ? now - lastUpdate : 16;
+    for (let i = 0; i < LENS.length; i++) {
+      const lens = LENS[i];
+      const dx = sx - lens.cx, dy = sy - lens.cy;
+      const d  = Math.hypot(dx, dy);
+      const angle  = d > 0.001 ? Math.atan2(dy, dx) : angles[i];
+      const radius = Math.min(d, lens.orbit);
+      if (dt > 0 && dt < 100) {
+        let delta = angle - angles[i];
+        while (delta >  Math.PI) delta -= 2 * Math.PI;
+        while (delta < -Math.PI) delta += 2 * Math.PI;
+        angVel[i] = angVel[i] * 0.5 + (delta / dt) * 0.5;
+      }
+      angles[i] = angle; radii[i] = radius;
+      setEye(lens, angle, radius);
+    }
+    lastUpdate = now;
+  }
+  function schedule(x, y) {
+    lastX = x; lastY = y;
+    if (cursorOutside) {
+      cursorOutside = false;
+      cancelLeaveBehavior(); cancelIdle(); scheduleIdle();
+      smoothCatchUp(CATCH_UP_MS);
+      return;
+    }
+    cancelLeaveBehavior(); cancelIdle(); scheduleIdle();
+    if (!pending) { pending = true; requestAnimationFrame(update); }
+  }
+
+  function startInertia() {
+    if (catchUpRaf) { cancelAnimationFrame(catchUpRaf); catchUpRaf = null; }
+    let lastFrame = performance.now();
+    function tick(now) {
+      const dt = now - lastFrame; lastFrame = now;
+      let moving = false;
+      for (let i = 0; i < LENS.length; i++) {
+        angles[i] += angVel[i] * dt;
+        angVel[i] *= Math.pow(0.85, dt / 16);
+        setEye(LENS[i], angles[i], radii[i]);
+        if (Math.abs(angVel[i]) > 0.0005) moving = true;
+      }
+      inertiaRaf = moving ? requestAnimationFrame(tick) : null;
+    }
+    inertiaRaf = requestAnimationFrame(tick);
+    returnTimer = setTimeout(() => {
+      if (inertiaRaf) { cancelAnimationFrame(inertiaRaf); inertiaRaf = null; }
+      leftEye.classList.add('returning');
+      rightEye.classList.add('returning');
+      for (const lens of LENS) {
+        lens.eye.setAttribute('cx', lens.defaultCx);
+        lens.eye.setAttribute('cy', lens.defaultCy);
+      }
+      angles[0] = angles[1] = 0;
+      radii[0]  = LENS[0].orbit; radii[1] = LENS[1].orbit;
+      angVel[0] = angVel[1] = 0;
+      returnTimer = null;
+    }, 2000);
+  }
+
+  document.addEventListener('mousemove', e => schedule(e.clientX, e.clientY));
+  document.addEventListener('touchmove', e => { if (e.touches[0]) schedule(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+  document.documentElement.addEventListener('mouseleave', () => { cursorOutside = true; setLidsOpen(); startInertia(); });
+
+  scheduleIdle();
+})();
+</script>
+
+<script>
+/* 영양성분표 콜로폰 — sticky가 스크롤 동기로 빼꼼/도킹(떨림 없음) + 클릭 펼침 + 언어 뒤집기(flip).
+   JS: 카드높이 기준 sticky 오프셋/펼침값 계산(스크롤핸들러 없음) + 언어버튼 클릭 시 반쪽 플립 스왑(EN↔KO). */
+(function colophon(){
+  const dock = document.getElementById('colophon-dock');
+  const card = document.getElementById('colophon');
+  const flipEl = document.getElementById('cl-flip');
+  if(!dock || !card || !flipEl) return;
+  const PEEK = 53 / 346.22;   // 보이는 비율: © 제목 + 언어버튼 + 굵은 괘선까지
+  const GAP = 28;             // 도킹 시 바닥 여백
+  let expanded = false, animT = 0, lang = 'en', flipping = false;
+  let hidden = 0;          // 접힘 시 화면 밖으로 내릴 양(헤더만 남김)
+  let expandBottom = GAP;  // 펼침 시 sticky bottom = 실제 도킹 간격(아래에서 측정). 이래야 맨 아래로 내렸을 때 도킹 위치와 정확히 수렴
+
+  const faceFor = l => card.querySelector('.cl-face[data-lang="' + l + '"]');
+
+  // 도킹 시 카드 바닥과 문서 끝 사이 실제 간격(레이아웃 기준, sticky 영향 없음).
+  // 펼침 bottom을 이 값으로 두면 sticky가 맨 아래에서 자연 위치로 안착할 때 펼침/접힘이 같은 자리로 수렴(턱 걸림 늦춰짐).
+  function measureDockGap(){
+    let natTop = 0, el = dock;
+    while(el){ natTop += el.offsetTop; el = el.offsetParent; }
+    const g = document.documentElement.scrollHeight - (natTop + dock.offsetHeight);
+    return (g >= 0 && g <= 60) ? g : GAP;     // 비정상 측정(예: 백그라운드 탭 100dvh→0)이면 기본 28
+  }
+  function setup(){
+    const h = card.offsetHeight;
+    if(!h) return;
+    hidden = h - (h * PEEK);
+    expandBottom = measureDockGap();
+    dock.style.bottom = (expanded ? expandBottom : -hidden) + 'px';   // 현재 상태에 맞는 sticky 오프셋
+  }
+  function animate(){ dock.classList.add('cl-anim'); clearTimeout(animT); animT = setTimeout(function(){ dock.classList.remove('cl-anim'); }, 480); }
+  function expand(){ if(expanded) return; expanded = true; dock.style.bottom = expandBottom + 'px'; card.setAttribute('aria-expanded','true'); }
+  function collapse(){ if(!expanded) return; expanded = false; dock.style.bottom = (-hidden) + 'px'; card.setAttribute('aria-expanded','false'); }
+
+  // 언어 전환(애니 없이 면 교체 + 높이 재계산)
+  function setLang(l){
+    lang = l;
+    faceFor('en').hidden = (l !== 'en');
+    faceFor('ko').hidden = (l !== 'ko');
+    setup();   // 면마다 높이 달라 sticky 오프셋/펼침값 재계산
+  }
+  // 반쪽 플립: 90°까지 돌려 가린 뒤 면 교체 → -90°에서 복귀(0°). rAF 없이 setTimeout(숨은탭/실브라우저 모두 동작)
+  // 좌우 너비 접기/펴기: scaleX 1→0 으로 줄이고 면 교체 후 0→1 로 펴기 (2D, 단순·안전)
+  function flip(){
+    if(flipping) return; flipping = true;
+    var D = 120;   // 한쪽 방향 ms. 닫힘 D + 열림 D = 총 2D. 속도 조절은 이 값만 바꾸면 됨(작을수록 빠름).
+    flipEl.style.transition = 'transform ' + (D/1000) + 's ease-in';
+    flipEl.style.transform = 'scaleX(0)';
+    setTimeout(function(){
+      var next = (lang === 'en' ? 'ko' : 'en');   // 0% 상태에서 교체
+      if(window.applySiteLang){ window.applySiteLang(next); }   // 콜로폰만이 아니라 사이트 전체 언어 전환(applySiteLang가 __colophonSetLang도 호출)
+      else { setLang(next); }
+      flipEl.style.transition = 'transform ' + (D/1000) + 's ease-out';
+      flipEl.style.transform = 'scaleX(1)';
+      setTimeout(function(){ flipping = false; }, D + 20);
+    }, D);
+  }
+
+  card.addEventListener('click', function(e){
+    if(e.target.closest('a')){ return; }                     // 인스타 링크 → 기본 네비게이션(펼침/접힘 안 함)
+    if(e.target.closest('.cl-langbtn')){ flip(); return; }   // 언어 버튼 영역 → 뒤집기
+    const r = card.getBoundingClientRect();
+    const fullyShown = r.top >= 0 && r.bottom <= window.innerHeight + 4;  // 바닥 도킹돼 이미 다 보이는 상태
+    if(expanded){ animate(); collapse(); }
+    else if(!fullyShown){ animate(); expand(); }
+  });
+  card.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); card.click(); }
+  });
+  // 펼친 뒤 스크롤해도 유지 (예전엔 스크롤 시 collapse 했었음 — 사용자가 원치 않음). 닫기는 다시 클릭으로만.
+  window.addEventListener('resize', setup);
+  window.addEventListener('load', setup);
+  window.__colophonLayout = function(){ collapse(); dock.classList.remove('cl-anim'); setup(); };
+  window.__colophonSetLang = setLang;   // 검증/디버그용 즉시 전환
+
+  setup();
+  setTimeout(setup, 150);
+  setTimeout(setup, 500);   // 웹폰트/SVG 사이즈 확정 후 재계산
+})();
+</script>
+</body>
+</html>
