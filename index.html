@@ -110,7 +110,7 @@
   .embed{ position:relative; aspect-ratio:4/3; background:#000; overflow:hidden; }
   .embed iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; pointer-events:none; }
   .embed.live iframe{ pointer-events:auto; }
-  .embed__veil{ position:absolute; inset:0; cursor:pointer; background:transparent; }   /* 자막 없음 — 클릭 전 스크롤 보호용 투명막 */
+  .embed__veil{ position:absolute; inset:0; background:transparent; }   /* 자막 없음 — 활성 전 스크롤 보호용 투명막 */
   .embed.live .embed__veil{ pointer-events:none; }
   .embed__open{ position:absolute; right:10px; bottom:10px; z-index:2; font-family:var(--mono); font-size:.72rem;
     color:#fff; background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.35); border-radius:999px; padding:.35rem .7rem; }
@@ -704,17 +704,36 @@ function renderDetail(p){
       <div class="col"><b>Year</b> ${p.year}<br><b>Tools</b> ${p.tools}</div>
     </div>`;
 }
-// 임베드는 클릭해야 상호작용 시작(그 전엔 스크롤이 캔버스에 안 먹힘)
-function bindEmbeds(){
-  $$("[data-embed]").forEach(el => el.addEventListener("click", (e)=>{
-    if(e.target.closest(".embed__open")) return;   // 새 탭 링크는 통과
+/* ★임베드 활성화 — 위임 리스너 1개를 document에 딱 한 번만 건다.
+   (예전엔 요소마다 개별로 붙였는데, openProject 바로 뒤 init의 applySiteLang이
+    상세를 한 번 더 렌더 → innerHTML이 갈아엎히며 리스너가 통째로 증발 → 클릭해도 영영 안 살아났음.
+    번역 버튼을 눌러도 같은 이유로 죽었다. 위임이면 어떤 재렌더에도 안 풀린다.)
+   활성 시점은 '클릭'이 아니라 '커서가 들어옴' — 클릭 활성이면 막이 첫 누름을 먹어서
+   사용자가 처음 그은 획이 캔버스에 안 그려진다.
+   다만 iframe이 살아있으면 그 위 휠은 부모로 안 넘어오므로(실측: 스크롤 0px),
+   ①스크롤 직후 400ms는 활성 보류(스크롤로 지나가다 갇히는 것 방지)
+   ②라이브 임베드 안에서는 부모가 pointermove를 못 받으므로, 부모에 pointermove가 다시 들어왔다는 건
+     밖으로 나왔다는 뜻 → 그때 해제. */
+(function(){
+  let lastScrollAt = 0;
+  addEventListener("scroll", ()=>{ lastScrollAt = performance.now(); }, { passive:true });
+  function syncLive(keep){ $$(".embed.live").forEach(e => { if(e !== keep) e.classList.remove("live"); }); }
+  document.addEventListener("pointermove", (e)=>{
+    const el = e.target.closest ? e.target.closest("[data-embed]") : null;
+    syncLive(el);
+    if(!el || e.pointerType !== "mouse") return;
+    if(performance.now() - lastScrollAt < 400) return;
     el.classList.add("live");
-  }));
-}
+  }, { passive:true });
+  // 터치/펜은 호버가 없으니 탭으로 활성(첫 탭은 막이 먹지만, 모바일엔 스크롤 보호가 더 중요)
+  document.addEventListener("pointerdown", (e)=>{
+    const el = e.target.closest ? e.target.closest("[data-embed]") : null;
+    if(el && !e.target.closest(".embed__open")) el.classList.add("live");   // 새 탭 링크는 통과
+  });
+})();
 function openProject(id){
   const i = idxOf(id); if(i<0) return;
   renderDetail(PROJECTS[i]);
-  bindEmbeds();
   showView("project");
 }
 const NAV_FOR = { work:"work", project:"work", exhibition:"exhibition", about:"about", contact:"contact" };
